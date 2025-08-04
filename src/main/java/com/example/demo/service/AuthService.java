@@ -14,6 +14,7 @@ import com.example.demo.dto.request.RefreshTokenRequest;
 import com.example.demo.dto.response.LoginResponse;
 import com.example.demo.entity.RefreshToken;
 import com.example.demo.entity.User;
+import com.example.demo.exception.ApiException;
 import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
@@ -42,10 +43,10 @@ public class AuthService {
 	public LoginResponse login(LoginRequest request) {
 		User user= userRepository.findByEmail(request.getEmail());
 		if(user==null) {
-			throw new RuntimeException("Email không tồn tại");
+			throw new ApiException("Email không tồn tại");
 		}else {
 			if(!passwordEncoder.matches(request.getPassWord(), user.getPassword())) {
-				throw new RuntimeException("Sai mật khẩu");
+				throw new ApiException("Sai mật khẩu");
 			}
 			String message="Đăng nhập thành công";
 			String token = jwtTokenProvider.generateToken(user.getEmail(),user.getId());
@@ -64,9 +65,9 @@ public class AuthService {
 	}
 	
 	public LoginResponse refreshToken(RefreshTokenRequest request) {
-		RefreshToken refreshToken= refreshTokenRepository.findByToken(request.getRefreshToken()).orElseThrow(()->new RuntimeException("Refresh Token không tồn tại"));
+		RefreshToken refreshToken= refreshTokenRepository.findByToken(request.getRefreshToken()).orElseThrow(()->new ApiException("Refresh Token không tồn tại"));
 		if(refreshToken.getExpirationTime().before(new Date())) {
-			throw new RuntimeException("Refresh Token đã hết hạn");
+			throw new ApiException("Refresh Token đã hết hạn");
 		}
 		User user =refreshToken.getUser();
 		

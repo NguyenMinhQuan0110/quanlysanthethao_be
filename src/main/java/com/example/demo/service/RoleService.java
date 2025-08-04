@@ -18,6 +18,7 @@ import com.example.demo.dto.response.RoleResponse;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.RolePermission;
+import com.example.demo.exception.ApiException;
 import com.example.demo.repository.PermissionRepository;
 import com.example.demo.repository.RolePermissionRepository;
 import com.example.demo.repository.RoleRepository;
@@ -47,7 +48,7 @@ public class RoleService {
 	}
 	
 	public RoleResponse getRoleById(Long id) {
-		Role role= roleRepository.findById(id).orElseThrow(()->new RuntimeException("Role không tồn tại"));
+		Role role= roleRepository.findById(id).orElseThrow(()->new ApiException("Role không tồn tại"));
 		return convertToResponse(role);
 	}
 	
@@ -56,7 +57,7 @@ public class RoleService {
 		Role newRole =new Role();
 		Role checkrole = roleRepository.findByName(request.getName());
 		if(checkrole!=null) {
-			throw new RuntimeException("Quyền đã tồn tại");
+			throw new ApiException("Quyền đã tồn tại");
 		}
 		newRole.setName(request.getName());
 		newRole.setDescription(request.getDescription());
@@ -68,10 +69,10 @@ public class RoleService {
 	
 	@Transactional
 	public RoleResponse update(UpdateRoleRequest request) {
-		Role updateRole =roleRepository.findById(request.getId()).orElseThrow(()-> new RuntimeException("Role không tồn tại"));
+		Role updateRole =roleRepository.findById(request.getId()).orElseThrow(()-> new ApiException("Role không tồn tại"));
 		Role checkrole = roleRepository.findByName(request.getName());
 		if(checkrole!=null) {
-			throw new RuntimeException("Quyền đã tồn tại");
+			throw new ApiException("Quyền đã tồn tại");
 		}
 		updateRole.setName(request.getName());
 		updateRole.setDescription(request.getDescription());
@@ -83,13 +84,13 @@ public class RoleService {
 	
 	@Transactional
 	public RoleResponse assignPermissionToRole(AssignPermissionToRole request) {
-		Role role = roleRepository.findById(request.getRoleId()).orElseThrow(()->new RuntimeException("Role không tồn tại"));
+		Role role = roleRepository.findById(request.getRoleId()).orElseThrow(()->new ApiException("Role không tồn tại"));
 		
 		rolePermissionRepository.deleteByRoleId(request.getRoleId());
 		
 		List<RolePermission> newRolePermission= new ArrayList<>();
 		for(Long permissionId: request.getListPermissionId()) {
-			Permission permission= permissionRepository.findById(permissionId).orElseThrow(()->new RuntimeException("Permission không tồn tại"));
+			Permission permission= permissionRepository.findById(permissionId).orElseThrow(()->new ApiException	("Permission không tồn tại"));
 			RolePermission rolePermission =new RolePermission();
 			rolePermission.setRole(role);
 			rolePermission.setPermission(permission);

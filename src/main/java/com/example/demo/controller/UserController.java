@@ -40,6 +40,7 @@ public class UserController {
 		return ResponseEntity.ok(listUser);
 	}
 	
+	@PreAuthorize("hasAuthority('search_user')")
 	@GetMapping("/search")
 	public ResponseEntity<Page<UserResponse>> searchUser(@RequestParam("keyword") String keyword,@RequestParam(name = "page", defaultValue = "0") int page,@RequestParam(name = "size", defaultValue = "10") int size){
 		Pageable pageable = PageRequest.of(page, size);
@@ -47,30 +48,35 @@ public class UserController {
 		return ResponseEntity.ok(listUserSearch);
 	}
 	
+	@PreAuthorize("hasAuthority('search_user')")
 	@GetMapping("/{id}")
 	public ResponseEntity<UserResponse> getUserById(@PathVariable("id") Long id){
 		UserResponse findUser=userService.getUserById(id);
 		return ResponseEntity.ok(findUser);
 	}
 	
+	@PreAuthorize("hasAuthority('create_user')")
 	@PostMapping("/create")
 	public ResponseEntity<UserResponse> create(@RequestBody CreateUserRequest userRequest){
 		UserResponse newUser= userService.create(userRequest);
 		return ResponseEntity.ok(newUser);
 	}
 	
+	@PreAuthorize("hasAuthority('update_user')")
 	@PutMapping("/update")
 	public ResponseEntity<UserResponse> update(@RequestBody UpdateUserRequest request){
 		UserResponse updateUser=userService.update(request);
 		return ResponseEntity.ok(updateUser);
 	}
 	
+	@PreAuthorize("hasAuthority('assign_role')")
 	@PostMapping("/assign-roles")
 	public ResponseEntity<UserResponse> assignRoles(@RequestBody AssignRoleToUserRequest request) {
 	    UserResponse updatedUser = userService.assignRolesToUser(request);
 	    return ResponseEntity.ok(updatedUser);
 	}
 	
+	@PreAuthorize("hasAuthority('delete_user')")
 	@DeleteMapping("/delete/{id}")
 	public ResponseEntity<Map<String, Object>>  delete(@PathVariable("id") Long id){
 		userService.delete(id);

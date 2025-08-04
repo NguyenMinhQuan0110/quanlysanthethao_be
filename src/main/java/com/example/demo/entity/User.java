@@ -52,6 +52,7 @@ public class User {
     @Column(name = "update_time")
     private LocalDateTime updateTime;
     
+//  orphanRemoval = true nghĩa là khi bạn xóa một phần tử ra khỏi list trong Entity, thì Hibernate sẽ tự động xóa bản ghi tương ứng ở trong database (bảng con).
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<UserRole> listRole;
 }

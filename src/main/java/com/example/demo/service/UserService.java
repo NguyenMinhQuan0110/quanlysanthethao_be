@@ -18,6 +18,7 @@ import com.example.demo.dto.response.UserResponse;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserRole;
+import com.example.demo.exception.ApiException;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.UserRoleRepository;
@@ -46,7 +47,7 @@ public class UserService {
 	}
 	
 	public UserResponse getUserById(Long id) {
-		User findUser = userRepository.findById(id).orElseThrow(()-> new RuntimeException("User không tồn tại"));
+		User findUser = userRepository.findById(id).orElseThrow(()-> new ApiException("User không tồn tại"));
 		return convertToResponse(findUser);
 	}
 	
@@ -68,10 +69,10 @@ public class UserService {
 		newUser.setCreateBy("system");
 		newUser.setCreateTime(LocalDateTime.now());
 		if (!userRequest.getPassword().equals(userRequest.getConfirmPassword())) {
-			throw new RuntimeException("Mật khẩu không khớp");
+			throw new ApiException("Mật khẩu không khớp");
 		}
 		if(checkEmail!=null && checkEmail.getEmail().equals(userRequest.getEmail())) {
-			throw new RuntimeException("Email đã tồn tại");
+			throw new ApiException("Email đã tồn tại");
 		}
 		newUser=userRepository.save(newUser);
 		return convertToResponse(newUser);
@@ -80,7 +81,7 @@ public class UserService {
 	@Transactional
 	public UserResponse update(UpdateUserRequest request) {
 		
-		User updateUser = userRepository.findById(request.getId()).orElseThrow(()-> new RuntimeException("User không tồn tại"));
+		User updateUser = userRepository.findById(request.getId()).orElseThrow(()-> new ApiException("User không tồn tại"));
 		updateUser.setFullname(request.getFullname());
 		updateUser.setEmail(request.getEmail());
 		updateUser.setPhoneNumber(request.getPhoneNumber());
@@ -96,14 +97,16 @@ public class UserService {
 	@Transactional
 	public UserResponse assignRolesToUser(AssignRoleToUserRequest request) {
 		 User user = userRepository.findById(request.getUserId())
-			        .orElseThrow(() -> new RuntimeException("User không tồn tại"));
-		// Xóa các quyền hiện tại
-		userRoleRepository.deleteByUserId(user.getId());
+			        .orElseThrow(() -> new ApiException("User không tồn tại"));
+		 // Xóa hết roles cũ -> Hibernate sẽ tự delete ở bảng user_role vì orphanRemoval = true
+		 if (user.getListRole() != null) {
+			 user.getListRole().clear();
+		 }
 		// Gán quyền mới
 	    List<UserRole> newUserRoles = new ArrayList<>();
 	    for (Long roleId : request.getListIdRole()) {
 	        Role role = roleRepository.findById(roleId)
-	            .orElseThrow(() -> new RuntimeException("Role không tồn tại: " + roleId));
+	            .orElseThrow(() -> new ApiException("Role không tồn tại: " + roleId));
 	        
 	        UserRole userRole = new UserRole();
 	        userRole.setUser(user);

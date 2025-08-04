@@ -11,7 +11,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.SignatureException;
-import io.jsonwebtoken.UnsupportedJwtException;
 
 @Component
 public class JwtTokenProvider {
@@ -74,15 +73,11 @@ public class JwtTokenProvider {
             Jwts.parser().setSigningKey(JWT_SECRET).parseClaimsJws(authToken);
             return true;
 		} catch (ExpiredJwtException ex) {
-            throw new RuntimeException("Token hết hạn", ex);
-        } catch (UnsupportedJwtException ex) {
-            throw new RuntimeException("Token không hỗ trợ", ex);
-        } catch (MalformedJwtException ex) {
-            throw new RuntimeException("Token sai định dạng", ex);
-        } catch (SignatureException ex) {
-            throw new RuntimeException("Chữ ký không hợp lệ", ex);
-        } catch (IllegalArgumentException ex) {
-            throw new RuntimeException("Token rỗng", ex);
-        }
+		    throw new RuntimeException("Token đã hết hạn");
+		} catch (SignatureException | MalformedJwtException ex) {
+		    throw new RuntimeException("Token không hợp lệ");
+		} catch (Exception ex) {
+		    throw new RuntimeException("Token lỗi");
+		}
 	}
 }

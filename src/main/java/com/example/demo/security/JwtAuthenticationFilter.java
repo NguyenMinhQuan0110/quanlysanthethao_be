@@ -1,6 +1,7 @@
 package com.example.demo.security;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
             FilterChain filterChain) throws ServletException, IOException{
 		try {
             String token = getJwtFromRequest(request);
-
+            
             if (token != null && tokenProvider.validateToken(token)) {
                 Long userId = tokenProvider.getUserIdFromToken(token);
                 User user = userRepository.findById(userId).orElseThrow();
@@ -74,7 +75,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                 }
             }
         } catch (Exception ex) {
-        	throw new RuntimeException("Không thể set authentication trong context: " + ex.getMessage());
+        	response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("{ \"timestamp\": \"" + LocalDateTime.now() + "\", " +
+                "\"message\": \"" + ex.getMessage() + "\", " +
+                "\"path\": \"" + request.getRequestURI() + "\" }");
+            return;
         }
 
         filterChain.doFilter(request, response);
