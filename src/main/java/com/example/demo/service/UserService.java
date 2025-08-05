@@ -22,6 +22,7 @@ import com.example.demo.exception.ApiException;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.UserRoleRepository;
+import com.example.demo.security.JwtTokenProvider;
 
 import jakarta.transaction.Transactional;
 
@@ -39,6 +40,9 @@ public class UserService {
 	
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
+	
+	@Autowired
+	private JwtTokenProvider jwtTokenProvider;
 
 	@Transactional
 	public Page<UserResponse> getAllUser(Pageable pageable){
@@ -58,19 +62,20 @@ public class UserService {
 	}
 	
 	@Transactional
-	public UserResponse create(CreateUserRequest userRequest) {
+	public UserResponse create(CreateUserRequest userRequest, String token) {
 		
 		User newUser = new User();
+		Long userId = jwtTokenProvider.getUserIdFromToken(token);
+		User userDo= userRepository.findById(userId).orElseThrow(()-> new ApiException("User không tồn tại")); 
 		newUser.setFullname(userRequest.getFullname());
 		newUser.setEmail(userRequest.getEmail());
 		User checkEmail = userRepository.findByEmail(userRequest.getEmail());
 		newUser.setPhoneNumber(userRequest.getPhoneNumber());
 		newUser.setPassword(passwordEncoder.encode(userRequest.getPassword()));
-		newUser.setCreateBy("system");
+		newUser.setCreateBy(userDo.getEmail());
 		newUser.setCreateTime(LocalDateTime.now());
-		if (!userRequest.getPassword().equals(userRequest.getConfirmPassword())) {
-			throw new ApiException("Mật khẩu không khớp");
-		}
+		newUser.setLoginFalse(0);
+		newUser.setLocked(false);
 		if(checkEmail!=null && checkEmail.getEmail().equals(userRequest.getEmail())) {
 			throw new ApiException("Email đã tồn tại");
 		}
@@ -79,29 +84,34 @@ public class UserService {
 	}
 	
 	@Transactional
-	public UserResponse update(UpdateUserRequest request) {
+	public UserResponse update(UpdateUserRequest request, String token) {
 		
-		User updateUser = userRepository.findById(request.getId()).orElseThrow(()-> new ApiException("User không tồn tại"));
-		updateUser.setFullname(request.getFullname());
-		updateUser.setEmail(request.getEmail());
-		updateUser.setPhoneNumber(request.getPhoneNumber());
-		updateUser.setUpdateBy("system");
-		updateUser.setUpdateTime(LocalDateTime.now());
+		User user = userRepository.findById(request.getId()).orElseThrow(()-> new ApiException("User không tồn tại"));
+		Long userId = jwtTokenProvider.getUserIdFromToken(token);
+		User userUpdate= userRepository.findById(userId).orElseThrow(()-> new ApiException("User không tồn tại")); 
+		user.setFullname(request.getFullname());
+		user.setEmail(request.getEmail());
+		user.setPhoneNumber(request.getPhoneNumber());
+		user.setUpdateBy(userUpdate.getEmail());
+		user.setUpdateTime(LocalDateTime.now());
+		user.setPassword(passwordEncoder.encode(request.getPassword()));
+		user=userRepository.save(user);
 		
-		updateUser=userRepository.save(updateUser);
-		
-		return convertToResponse(updateUser);
+		return convertToResponse(user);
 		
 	}
 	
 	@Transactional
-	public UserResponse assignRolesToUser(AssignRoleToUserRequest request) {
+	public UserResponse assignRolesToUser(AssignRoleToUserRequest request, String token) {
 		 User user = userRepository.findById(request.getUserId())
 			        .orElseThrow(() -> new ApiException("User không tồn tại"));
-		 // Xóa hết roles cũ -> Hibernate sẽ tự delete ở bảng user_role vì orphanRemoval = true
-		 if (user.getListRole() != null) {
-			 user.getListRole().clear();
-		 }
+		 
+		 Long userId = jwtTokenProvider.getUserIdFromToken(token);
+		 User userDo= userRepository.findById(userId).orElseThrow(()-> new ApiException("User không tồn tại"));
+		 
+		 userRoleRepository.deleteByUserId(request.getUserId());
+		 
+		 
 		// Gán quyền mới
 	    List<UserRole> newUserRoles = new ArrayList<>();
 	    for (Long roleId : request.getListIdRole()) {
@@ -111,7 +121,7 @@ public class UserService {
 	        UserRole userRole = new UserRole();
 	        userRole.setUser(user);
 	        userRole.setRole(role);
-	        userRole.setCreateBy("system");
+	        userRole.setCreateBy(userDo.getEmail());
 	        userRole.setCreateTime(LocalDateTime.now());
 	        newUserRoles.add(userRole);
 	    }

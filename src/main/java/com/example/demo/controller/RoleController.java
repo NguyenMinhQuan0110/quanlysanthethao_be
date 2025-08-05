@@ -25,6 +25,9 @@ import com.example.demo.dto.request.UpdateRoleRequest;
 import com.example.demo.dto.response.RoleResponse;
 import com.example.demo.service.RoleService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("api/role")
 public class RoleController {
@@ -57,28 +60,31 @@ public class RoleController {
 	
 	@PreAuthorize("hasAuthority('create_role')")
 	@PostMapping("/create")
-	public ResponseEntity<RoleResponse> create (@RequestBody CreateRoleRequest request){
-		RoleResponse newRole = roleService.create(request);
+	public ResponseEntity<RoleResponse> create (@Valid @RequestBody CreateRoleRequest request,HttpServletRequest httpServletRequest){
+		String token = httpServletRequest.getHeader("Authorization");
+		RoleResponse newRole = roleService.create(request,token.substring(7));
 		return ResponseEntity.ok(newRole);
 	}
 	
 	@PreAuthorize("hasAuthority('update_role')")
 	@PutMapping("/update")
-	public ResponseEntity<RoleResponse>update (@RequestBody UpdateRoleRequest request){
-		RoleResponse updateRole =roleService.update(request);
+	public ResponseEntity<RoleResponse>update (@Valid @RequestBody UpdateRoleRequest request,HttpServletRequest httpServletRequest){
+		String token = httpServletRequest.getHeader("Authorization");
+		RoleResponse updateRole =roleService.update(request,token.substring(7));
 		return ResponseEntity.ok(updateRole);
 	}
 	
 	@PreAuthorize("hasAuthority('assig_permisstion_role')")
 	@PostMapping("/assign-permission")
-	public ResponseEntity<RoleResponse> assignRoles(@RequestBody AssignPermissionToRole request) {
-		RoleResponse updateRole = roleService.assignPermissionToRole(request);
+	public ResponseEntity<RoleResponse> assignRoles(@Valid @RequestBody AssignPermissionToRole request,HttpServletRequest httpServletRequest) {
+		String token = httpServletRequest.getHeader("Authorization");
+		RoleResponse updateRole = roleService.assignPermissionToRole(request,token.substring(7));
 	    return ResponseEntity.ok(updateRole);
 	} 
 	
 	@PreAuthorize("hasAuthority('delete_role')")
 	@DeleteMapping("delete/{id}")
-	public ResponseEntity<Map<String, Object>> delete(@PathVariable("id") Long id){
+	public ResponseEntity<Map<String, Object>> delete(@Valid @PathVariable("id") Long id){
 		roleService.delete(id);
 		Map<String, Object> response = new HashMap<>();
 		response.put("message", "Xóa Quyền dùng thành công");

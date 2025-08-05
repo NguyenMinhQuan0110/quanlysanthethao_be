@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.request.RefreshTokenRequest;
+import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.dto.response.LoginResponse;
+import com.example.demo.dto.response.UserResponse;
 import com.example.demo.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("api/auth")
@@ -26,9 +29,15 @@ public class AuthController {
 	private AuthService authService;
 	
 	@PostMapping("/login")
-	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request){
+	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request){
 		LoginResponse userLogin= authService.login(request);
 		return ResponseEntity.ok(userLogin);
+	}
+	
+	@PostMapping("/register")
+	public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request){
+		UserResponse newUser= authService.register(request);
+		return ResponseEntity.ok(newUser);
 	}
 	
 	@PostMapping("/refresh-token")

@@ -18,10 +18,13 @@ import com.example.demo.dto.response.RoleResponse;
 import com.example.demo.entity.Permission;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.RolePermission;
+import com.example.demo.entity.User;
 import com.example.demo.exception.ApiException;
 import com.example.demo.repository.PermissionRepository;
 import com.example.demo.repository.RolePermissionRepository;
 import com.example.demo.repository.RoleRepository;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.security.JwtTokenProvider;
 
 import jakarta.transaction.Transactional;
 
@@ -30,6 +33,12 @@ public class RoleService {
 	
 	@Autowired
 	private RoleRepository roleRepository;
+	
+	@Autowired
+	private UserRepository userRepository;
+	
+	@Autowired
+	private JwtTokenProvider jwtTokenProvider;
 	
 	@Autowired
 	private PermissionRepository permissionRepository;
@@ -53,39 +62,44 @@ public class RoleService {
 	}
 	
 	@Transactional
-	public RoleResponse create(CreateRoleRequest request) {
+	public RoleResponse create(CreateRoleRequest request,String token) {
 		Role newRole =new Role();
+		Long userId = jwtTokenProvider.getUserIdFromToken(token);
+		User userDo=userRepository.findById(userId).orElseThrow(()-> new ApiException("User không tồn tại")); 
 		Role checkrole = roleRepository.findByName(request.getName());
 		if(checkrole!=null) {
 			throw new ApiException("Quyền đã tồn tại");
 		}
 		newRole.setName(request.getName());
 		newRole.setDescription(request.getDescription());
-		newRole.setCreateBy("system");
+		newRole.setCreateBy(userDo.getEmail());
 		newRole.setCreateTime(LocalDateTime.now());
 		newRole=roleRepository.save(newRole);
 		return convertToResponse(newRole);
 	}
 	
 	@Transactional
-	public RoleResponse update(UpdateRoleRequest request) {
+	public RoleResponse update(UpdateRoleRequest request,String token) {
 		Role updateRole =roleRepository.findById(request.getId()).orElseThrow(()-> new ApiException("Role không tồn tại"));
+		Long userId = jwtTokenProvider.getUserIdFromToken(token);
+		User userDo=userRepository.findById(userId).orElseThrow(()-> new ApiException("User không tồn tại"));
 		Role checkrole = roleRepository.findByName(request.getName());
 		if(checkrole!=null) {
 			throw new ApiException("Quyền đã tồn tại");
 		}
 		updateRole.setName(request.getName());
 		updateRole.setDescription(request.getDescription());
-		updateRole.setUpdateBy("system");
+		updateRole.setUpdateBy(userDo.getEmail());
 		updateRole.setUpdateTime(LocalDateTime.now());
 		updateRole=roleRepository.save(updateRole);
 		return convertToResponse(updateRole);
 	}
 	
 	@Transactional
-	public RoleResponse assignPermissionToRole(AssignPermissionToRole request) {
+	public RoleResponse assignPermissionToRole(AssignPermissionToRole request, String token) {
 		Role role = roleRepository.findById(request.getRoleId()).orElseThrow(()->new ApiException("Role không tồn tại"));
-		
+		Long userId = jwtTokenProvider.getUserIdFromToken(token);
+		User userDo=userRepository.findById(userId).orElseThrow(()-> new ApiException("User không tồn tại"));
 		rolePermissionRepository.deleteByRoleId(request.getRoleId());
 		
 		List<RolePermission> newRolePermission= new ArrayList<>();
@@ -94,7 +108,7 @@ public class RoleService {
 			RolePermission rolePermission =new RolePermission();
 			rolePermission.setRole(role);
 			rolePermission.setPermission(permission);
-			rolePermission.setCreateBy("system");
+			rolePermission.setCreateBy(userDo.getEmail());
 			rolePermission.setCreateTime(LocalDateTime.now());
 			newRolePermission.add(rolePermission);
 		}

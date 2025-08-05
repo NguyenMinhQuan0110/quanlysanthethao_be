@@ -39,6 +39,15 @@ public class User {
 
     @Column(name = "password")
     private String password;
+    
+    @Column(name = "login_false")
+    private Integer loginFalse;
+    
+    @Column(name = "locked")
+    private Boolean locked = false; 
+    
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
 
     @Column(name = "create_by")
     private String createBy;
@@ -53,6 +62,6 @@ public class User {
     private LocalDateTime updateTime;
     
 //  orphanRemoval = true nghĩa là khi bạn xóa một phần tử ra khỏi list trong Entity, thì Hibernate sẽ tự động xóa bản ghi tương ứng ở trong database (bảng con).
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<UserRole> listRole;
 }
